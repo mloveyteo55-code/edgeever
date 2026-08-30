@@ -22,7 +22,7 @@ not_found_handling = "single-page-application"
 run_worker_first = ["/api/*", "/mcp", "/__scheduled"]
 
 [[d1_databases]]
-binding = "edgeever"
+binding = "DB"
 database_name = "edgeever"
 database_id = "e4a682f9-d3a1-4ceb-acab-8097b7ccf551"
 migrations_dir = "migrations"
