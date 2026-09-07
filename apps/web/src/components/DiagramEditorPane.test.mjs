@@ -32,7 +32,7 @@ describe("diagram editor keyboard workflow", () => {
   });
 
   test("continues from text editing into the flowchart node picker", () => {
-    expect(source).toContain('else openFlowQuickCreateRef.current(editedNode)');
+    expect(source).toContain('else if (document.kind === "flowchart") openFlowQuickCreateRef.current(editedNode)');
   });
 });
 
@@ -59,6 +59,11 @@ describe("diagram editor canvas surface", () => {
     expect(source).toContain("!readOnly && saveFailed");
     expect(source).toContain('t("diagram.retrySave")');
     expect(source).not.toContain('<Save className="h-4 w-4" />');
+    expect(source).toContain('t("editor.saveState.unsaved")');
+    expect(source).toContain('"bg-slate-100 text-slate-500"');
+    expect(source).toContain("{...statusSettleMotion}");
+    expect(source).toContain('saveStatus === "unsaved" ? (');
+    expect(source).not.toContain('t("diagram.saved")');
   });
 
   test("uses a clean grid-free canvas for both diagram types", () => {
@@ -68,16 +73,16 @@ describe("diagram editor canvas surface", () => {
     expect(source).not.toContain("graph.drawGrid");
   });
 
-  test("uses straight flowchart edges and presents the content smaller at the left", () => {
-    expect(source).toContain('connector: { name: kind === "mind-map" ? "smooth" : "normal" }');
+  test("uses restrained rounded edges and presents connected diagrams smaller at the left", () => {
+    expect(source).toContain('connector: { name: kind === "mind-map" ? "smooth" : "rounded"');
     expect(source).toContain('router: "normal"');
     expect(source).not.toContain('name: "manhattan"');
-    expect(source).toContain('maxScale: document.kind === "flowchart" ? 0.84 : 1');
+    expect(source).toContain('maxScale: document.kind === "mind-map" ? 1 : 0.84');
     expect(source).toContain("fitDiagramContent(graph, document, containerRef.current);");
   });
 
-  test("exposes flowchart-only connection handles with safe connection rules", () => {
-    expect(source).toContain('kind === "flowchart" ? { ports:');
+  test("exposes connection handles on flowcharts and architecture components with safe connection rules", () => {
+    expect(source).toContain("const hasPorts = isConnectableDiagram(kind) && node.shape !== \"boundary\"");
     expect(source).toContain("const FLOW_PORT_HIT_RADIUS = 14");
     expect(source).toContain("const FLOW_PORT_DOT_RADIUS = 7");
     expect(source).toContain('selector: "hitArea"');
@@ -87,13 +92,69 @@ describe("diagram editor canvas surface", () => {
     expect(source).toContain('pointerEvents: "none"');
     expect(globalStyles).toContain('[data-diagram-kind="flowchart"] .x6-widget-selection-box-node');
     expect(globalStyles).toContain("pointer-events: none !important");
-    expect(source).toContain('allowPort: document.kind === "flowchart"');
+    expect(source).toContain("allowPort: isConnectableDiagram(document.kind)");
     expect(source).toContain('allowBlank: document.kind === "flowchart"');
     expect(source).toContain("allowNode: false");
     expect(source).toContain("allowLoop: false");
     expect(source).toContain("allowMulti: false");
     expect(source).toContain("sourceCell.id !== targetCell.id");
     expect(source).toContain("data-diagram-kind={document.kind}");
+  });
+
+  test("provides architecture components, boundaries, semantic edges, and editable labels", () => {
+    expect(source).toContain('document.kind === "architecture"');
+    expect(source).not.toContain('onClick={() => addNode("service")}');
+    expect(source).toContain('{ shape: "database", icon: Database');
+    expect(source).toContain('{ shape: "boundary", icon: Box');
+    expect(source).toContain('t("diagram.architectureConnectHint")');
+    expect(source).toContain("fitArchitectureBoundaries(graph)");
+    expect(source).toContain("parent.addChild(node)");
+    expect(source).toContain("updateSelectedEdgeLabel");
+    expect(source).toContain('t("diagram.edgeText")');
+    expect(source).toContain("ARCHITECTURE_NODE_ICONS");
+    expect(source).toContain('{ tagName: "path", selector: "architectureIcon" }');
+    expect(source).toContain('shape === "external" ? "7 5"');
+    expect(globalStyles).toContain('[data-diagram-kind="architecture"] .x6-port-body');
+  });
+
+  test("organizes architecture resources in a searchable category library", () => {
+    expect(source).toContain("ARCHITECTURE_LIBRARY_CATEGORIES");
+    expect(source).toContain('t("diagram.componentLibrary")');
+    expect(source).toContain('onPointerEnter={() => setOpen(true)}');
+    expect(source).toContain('t("diagram.componentSearch")');
+    expect(source).toContain('labelKey: "diagram.componentCategoryExperience"');
+    expect(source).toContain('labelKey: "diagram.componentCategoryServices"');
+    expect(source).toContain('labelKey: "diagram.componentCategoryDatabases"');
+    expect(source).toContain('labelKey: "diagram.componentCategoryStorage"');
+    expect(source).toContain('labelKey: "diagram.componentCategoryMiddleware"');
+    expect(source).toContain('labelKey: "diagram.componentCategoryNetwork"');
+    expect(source).toContain('labelKey: "diagram.componentCategorySecurity"');
+    expect(source).toContain('labelKey: "diagram.componentCategoryObservability"');
+    expect(source).toContain('labelKey: "diagram.componentCategoryExternal"');
+    expect(source).toContain("<Collapsible key={category.id} defaultOpen>");
+    expect(source).toContain("category.items.filter");
+    expect(source).toContain('className="grid grid-cols-7 gap-1 px-1 pb-2"');
+    expect(source).toContain('text-xs font-semibold');
+    expect(source).not.toContain('{category.items.length}</span>');
+    expect(source).toContain('<TooltipContent side="top">');
+    expect(source).toContain('aria-label={label}');
+    expect(source).toContain('options.label ??');
+    expect(source).toContain('resourceIcon: architectureResourceIcon(item)');
+    expect(source).toContain('...(data?.resourceIcon ? { resourceIcon: data.resourceIcon } : {})');
+    expect(source).toContain('architectureNodeVisuals(node.shape, size, appearance, node.resourceIcon)');
+    expect(source).toContain('inferArchitectureResourceIcon(node.label, t)');
+    expect(source).toContain('.render({}, null).props.iconNode');
+    expect(source).not.toContain('className="line-clamp-2"');
+  });
+
+  test("opens every diagram insertion library immediately on pointer hover", () => {
+    expect(source).toContain("const DiagramInsertMenu = ({");
+    expect(source.match(/onPointerEnter=\{\(\) => setOpen\(true\)\}/g)?.length).toBe(2);
+    expect(source).toContain('label={t("diagram.addTopic")}');
+    expect(source).toContain('label: t("diagram.addSiblingTopic")');
+    expect(source).toContain('label={t("diagram.addStep")}');
+    expect(source).toContain('label: t("diagram.addDecision")');
+    expect(source).toContain('label: t("diagram.addTerminator")');
   });
 
   test("shows connection handles only on selected flowchart nodes", () => {

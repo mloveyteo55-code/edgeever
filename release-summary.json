@@ -1,11 +1,13 @@
 {
-  "version": "1.58.1",
+  "version": "1.60.0",
   "changes": {
     "en-US": [
-      "Fix the diagram editor failing to open when creating or viewing mind map and flowchart notes in desktop and production builds."
+      "Improve architecture diagram viewing and editing across platforms: render diagrams with X6 on mobile, add richer components and clearer diagram labels on Web and desktop, unify expansion and save feedback, and keep diagram metadata out of regular notes.",
+      "Fix desktop sync failures caused by merged memo ordering and foreign-key constraints."
     ],
     "zh-CN": [
-      "修复桌面端及生产环境中新建或打开思维导图、流程图笔记时编辑器无法显示的问题。"
+      "增强架构图在各端的浏览与编辑体验：移动端使用 X6 渲染，Web 与桌面端提供更丰富的组件和更清晰的图表标识，统一展开与保存反馈，并避免图表元数据出现在普通笔记中。",
+      "修复桌面端合并备忘录顺序导致的外键约束同步失败。"
     ]
   }
 }
